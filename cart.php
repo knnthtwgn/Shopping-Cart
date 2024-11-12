@@ -76,31 +76,32 @@ $item8 = [
 $itemCollection = [$item1, $item2, $item3, $item4, $item5, $item6, $item7, $item8];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quantity'])) {
-    // Loop through the quantity data and update the cart
-    foreach ($_POST['quantity'] as $id => $quantity) {
-        $size = $_POST['size'][$id];  // Get the size for the current product
-
-        // Find the item in the cart
-        $found = false;
-        foreach ($_SESSION['cart'] as &$cart_item) {
-            if ($cart_item['id'] == $id && $cart_item['size'] == $size) {
-                // Update the quantity of the existing item
-                $cart_item['quantity'] = min(max(1, (int)$quantity), 99);
-                $found = true;
-                break;
-            }
-        }
-
-        // If item is not found in the cart, add it
-        if (!$found) {
-            foreach ($itemCollection as $item) {
-                if ($item['id'] == $id) {
-                    $_SESSION['cart'][] = [
-                        'id' => $item['id'],
-                        'size' => $size,  // Include size in the cart item
-                        'quantity' => min(max(1, (int)$quantity), 99)
-                    ];
+    // Loop through each item ID in the quantity data
+    foreach ($_POST['quantity'] as $id => $sizes) {
+        // Loop through each size for the current item ID
+        foreach ($sizes as $size => $quantity) {
+            // Find the item in the cart
+            $found = false;
+            foreach ($_SESSION['cart'] as &$cart_item) {
+                if ($cart_item['id'] == $id && $cart_item['size'] == $size) {
+                    // Update the quantity for the matching size
+                    $cart_item['quantity'] = min(max(1, (int)$quantity), 99);
+                    $found = true;
                     break;
+                }
+            }
+
+            // If item with this size is not found in the cart, add it
+            if (!$found) {
+                foreach ($itemCollection as $item) {
+                    if ($item['id'] == $id) {
+                        $_SESSION['cart'][] = [
+                            'id' => $item['id'],
+                            'size' => $size,
+                            'quantity' => min(max(1, (int)$quantity), 99)
+                        ];
+                        break;
+                    }
                 }
             }
         }
@@ -109,6 +110,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quantity'])) {
     header("Location: cart.php");
     exit;
 }
+
+
 
 // Calculate total cart value and item count
 $total_price = 0;
@@ -192,8 +195,9 @@ $cart_count = $total_quantity;
                             </td>
                             <td class="text-center"><?php echo htmlspecialchars($cart_item['size']); ?></td>
                             <td class="text-center">
-                                <input type="number" name="quantity[<?php echo $cart_item['id']; ?>]" value="<?php echo $cart_item['quantity']; ?>" min="1" max="99" class="form-control w-50 mx-auto">
-                                <input type="hidden" name="size[<?php echo $cart_item['id']; ?>]" value="<?php echo $cart_item['size']; ?>">
+                            <input type="number" name="quantity[<?php echo $cart_item['id']; ?>][<?php echo $cart_item['size']; ?>]" value="<?php echo $cart_item['quantity']; ?>" min="1" max="99" class="form-control w-50 mx-auto">
+                            <input type="hidden" name="size[<?php echo $cart_item['id']; ?>][<?php echo $cart_item['size']; ?>]" value="<?php echo $cart_item['size']; ?>">
+
                             </td>
                             <td>₱<?php echo number_format($item_details['price'], 2); ?></td>
                             <td>₱<?php echo number_format($item_total, 2); ?></td>
@@ -284,4 +288,3 @@ $cart_count = $total_quantity;
     color: white;
 }
 </style>
-
